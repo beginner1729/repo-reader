@@ -4,7 +4,7 @@
 # Installs Code Repository Reader agents to your project's .opencode directory
 #
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/koushikdey/Work/repo-reader/main/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/beginner1729/repo-reader/main/install.sh | bash
 #   or
 #   ./install.sh [target_directory]
 
@@ -17,9 +17,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Repository URL (update this with your actual repo URL)
-REPO_URL="https://github.com/koushikdey/Work/repo-reader"
-RAW_URL="https://raw.githubusercontent.com/koushikdey/Work/repo-reader/main"
+# Repository URL
+REPO_URL="https://github.com/beginner1729/repo-reader"
+RAW_URL="https://raw.githubusercontent.com/beginner1729/repo-reader/main"
 
 # Default target directory
 TARGET_DIR="${1:-.}"

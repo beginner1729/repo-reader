@@ -6,8 +6,6 @@ A powerful multi-agent system for analyzing and documenting code repositories us
 
 ### One-Line Installation
 
-**Replace `beginner1729` with your actual GitHub username:**
-
 ```bash
 curl -sSL https://raw.githubusercontent.com/beginner1729/repo-reader/main/install.sh | bash
 ```
@@ -17,12 +15,6 @@ Or with a specific target directory:
 ```bash
 curl -sSL https://raw.githubusercontent.com/beginner1729/repo-reader/main/install.sh | bash -s /path/to/your/project
 ```
-
-> **Note:** Before using the one-line installer, you must:
-> 1. Fork or clone this repository to your GitHub account
-> 2. Update `install.sh` lines 21-22 with your actual GitHub username and repository name
-> 3. Commit and push the changes
-> 4. Use your repository URL in the curl command above
 
 ### Manual Installation
 
