@@ -1,0 +1,22 @@
+# OpenCode Configuration for Code Repository Reader
+# This file registers all agents, subagents, and workflows for the system
+
+project:
+  name: code-repository-reader
+  description: Multi-agent system for analyzing and documenting code repositories
+
+# Agent discovery paths
+agents:
+  paths:
+    - ./agents
+    - ./subagents
+
+# Workflow discovery paths
+workflows:
+  paths:
+    - ./workflows
+
+# Default settings
+defaults:
+  output_directory: ./output
+  log_level: info
