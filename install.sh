@@ -38,11 +38,6 @@ fi
 # Check if target is a git repository
 if [ ! -d "$TARGET_DIR/.git" ]; then
     echo -e "${YELLOW}⚠️  Warning: Target directory is not a git repository${NC}"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
 fi
 
 echo -e "${BLUE}📁 Target directory:${NC} $TARGET_DIR"
