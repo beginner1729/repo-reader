@@ -65,7 +65,7 @@ The Code Repository Reader is a multi-agent system designed to:
 
 ```
 /
-├── opencode.yaml              # Main OpenCode configuration
+├── repo-reader.json           # Project metadata (auto-discovery replaces old opencode.yaml)
 ├── AGENTS.md                  # This file - system overview
 ├── agents/
 │   ├── broad_summary_agent.md
@@ -92,8 +92,8 @@ All agent and workflow files follow the OpenCode markdown configuration format w
 ## Usage
 
 To use this system with OpenCode:
-1. Ensure the `opencode.yaml` configuration is loaded
-2. Execute the workflow: `repo_reader_workflow`
+1. Agents are auto-discovered from `.opencode/agents/` and `.opencode/subagents/`
+2. Execute agents individually (workflows are not supported in current opencode CLI)
 3. Provide required inputs:
    - `repository_path`: Path to target repository
    - `output_base_directory`: Where to save outputs (default: ./output)

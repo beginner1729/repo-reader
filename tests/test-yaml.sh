@@ -206,11 +206,16 @@ run_tests "$OPENCODE_DIR/agents" "agents"
 run_tests "$OPENCODE_DIR/subagents" "subagents"
 run_tests "$OPENCODE_DIR/workflows" "workflows"
 
-# Also test opencode.yaml if it exists
-if [ -f "$OPENCODE_DIR/opencode.yaml" ]; then
-    echo -e "${BLUE}📂 Testing opencode.yaml...${NC}"
+# Also test repo-reader.json if it exists
+if [ -f "$PROJECT_ROOT/repo-reader.json" ]; then
+    echo -e "${BLUE}📂 Testing repo-reader.json...${NC}"
     echo "-------------------------"
-    validate_yaml_syntax "$OPENCODE_DIR/opencode.yaml"
+    if python3 -c "import json; json.load(open('$PROJECT_ROOT/repo-reader.json'))" 2>/dev/null; then
+        echo -e "${GREEN}✅ Valid JSON${NC}"
+    else
+        echo -e "${RED}❌ Invalid JSON${NC}"
+        ((ERRORS++))
+    fi
     echo ""
 fi
 

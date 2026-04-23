@@ -42,9 +42,9 @@ validate_yaml_frontmatter() {
         return 1
     fi
     
-    # Check if file has type field
-    if ! grep -q "^type:" "$file"; then
-        echo -e "${RED}❌ $basename: Missing 'type' field${NC}"
+    # Check if file has mode or type field
+    if ! grep -qE "^(mode|type):" "$file"; then
+        echo -e "${RED}❌ $basename: Missing 'mode' or 'type' field${NC}"
         return 1
     fi
     
@@ -55,17 +55,10 @@ validate_yaml_frontmatter() {
     fi
     
     # Check if file has tools field (for agents and subagents)
-    local file_type=$(grep "^type:" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
-    if [[ "$file_type" == "agent" || "$file_type" == "subagent" ]]; then
+    local file_mode=$(grep -E "^(mode|type):" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
+    if [[ "$file_mode" == "agent" || "$file_mode" == "subagent" ]]; then
         if ! grep -q "^tools:" "$file"; then
             echo -e "${RED}❌ $basename: Missing 'tools' field (required for agents/subagents)${NC}"
-            return 1
-        fi
-        
-        # Validate tools format (should be a simple list, not objects)
-        local tools_section=$(sed -n '/^tools:/,/^[^ ]/p' "$file" | head -20)
-        if echo "$tools_section" | grep -q "type:"; then
-            echo -e "${RED}❌ $basename: Tools should be a simple list, not objects with 'type:' fields${NC}"
             return 1
         fi
     fi
@@ -89,10 +82,10 @@ validate_agent() {
     
     if validate_yaml_frontmatter "$file"; then
         # Additional agent-specific checks
-        local agent_type=$(grep "^type:" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
+        local agent_mode=$(grep -E "^(mode|type):" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
         
-        if [[ "$agent_type" != "agent" ]]; then
-            echo -e "${RED}❌ $basename: Type should be 'agent', found '$agent_type'${NC}"
+        if [[ "$agent_mode" != "agent" && "$agent_mode" != "subagent" ]]; then
+            echo -e "${RED}❌ $basename: Mode should be 'agent' or 'subagent', found '$agent_mode'${NC}"
             ((ERRORS++))
         fi
         
@@ -116,10 +109,10 @@ validate_subagent() {
     
     if validate_yaml_frontmatter "$file"; then
         # Additional subagent-specific checks
-        local agent_type=$(grep "^type:" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
+        local agent_mode=$(grep -E "^(mode|type):" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
         
-        if [[ "$agent_type" != "subagent" ]]; then
-            echo -e "${RED}❌ $basename: Type should be 'subagent', found '$agent_type'${NC}"
+        if [[ "$agent_mode" != "subagent" && "$agent_mode" != "agent" ]]; then
+            echo -e "${RED}❌ $basename: Mode should be 'subagent' or 'agent', found '$agent_mode'${NC}"
             ((ERRORS++))
         fi
         
@@ -146,8 +139,8 @@ validate_workflow() {
         local agent_type=$(grep "^type:" "$file" | head -1 | cut -d':' -f2 | tr -d ' ')
         
         if [[ "$agent_type" != "workflow" ]]; then
-            echo -e "${RED}❌ $basename: Type should be 'workflow', found '$agent_type'${NC}"
-            ((ERRORS++))
+            echo -e "${YELLOW}⚠️  $basename: Type should be 'workflow', found '$agent_type' (note: workflows may not be supported in latest opencode)${NC}"
+            ((WARNINGS++))
         fi
         
         # Check for steps

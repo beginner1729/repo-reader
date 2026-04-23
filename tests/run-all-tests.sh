@@ -73,8 +73,9 @@ if [ $TOTAL_ERRORS -eq 0 ]; then
     echo -e "${GREEN}✅ Your OpenCode configuration is valid and ready to use!${NC}"
     echo ""
     echo -e "${BLUE}Next steps:${NC}"
-    echo "  1. Run the workflow: opencode workflow run repo_reader_workflow"
+    echo "  1. Run the agents: opencode agent run <agent_name>"
     echo "  2. Or use the helper script: .opencode/run.sh"
+    echo "  (Note: workflows are not supported in current opencode CLI)"
     exit 0
 else
     echo -e "${RED}❌ $TOTAL_ERRORS test suite(s) failed${NC}"

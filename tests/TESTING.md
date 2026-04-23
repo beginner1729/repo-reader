@@ -293,7 +293,7 @@ After tests pass:
    cd your-project
    .opencode/run.sh
    # or
-   opencode workflow run repo_reader_workflow
+   opencode agent run <agent_name>  (workflows not supported in current CLI)
    ```
 
 3. **View documentation**:

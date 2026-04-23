@@ -29,10 +29,12 @@ cd repo-reader
 cp -r .opencode /path/to/your/project/
 ```
 
-3. Run the workflow:
+3. Run the agents:
 ```bash
 cd /path/to/your/project
-opencode workflow run repo_reader_workflow
+opencode agent run broad_summary_agent
+opencode agent run connection_builder_agent
+opencode agent run snippet_builder_agent
 ```
 
 ## 📋 Prerequisites
@@ -387,14 +389,12 @@ curl -sSL https://raw.githubusercontent.com/beginner1729/repo-reader/main/instal
 
 ```bash
 # Run with custom output directory
-opencode workflow run repo_reader_workflow \
-    --input repository_path="$(pwd)" \
-    --input output_base_directory="./custom-docs"
+opencode agent run broad_summary_agent
+opencode agent run connection_builder_agent
+opencode agent run snippet_builder_agent
 
 # Run specific agent only
-opencode agent run broad_summary_agent \
-    --input repository_path="$(pwd)" \
-    --input output_directory="./summaries"
+opencode agent run broad_summary_agent
 ```
 
 ### Using the Helper Script
@@ -471,11 +471,11 @@ npm install -g @opencode/cli
 pip install opencode-cli
 ```
 
-**Issue**: Workflow fails with "Agent not found"
+**Issue**: Agent fails with "Agent not found"
 ```bash
 # Solution: Verify configuration
 cd /path/to/your/project
-opencode config validate
+opencode agent list
 ```
 
 **Issue**: Large repositories causing timeouts
