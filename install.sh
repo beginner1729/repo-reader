@@ -73,6 +73,17 @@ download_file() {
     return 0
 }
 
+# Download project config for local agent discovery in .opencode
+echo -n "  • repo-reader.json (config)... "
+if download_file "$RAW_URL/repo-reader.json" "$OPENCODE_DIR/repo-reader.json"; then
+    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⚠️${NC}"
+fi
+
+# Remove stale opencode.json if present; this project uses repo-reader.json schema.
+rm -f "$OPENCODE_DIR/opencode.json"
+
 # Download agents
 echo -n "  • broad_summary_agent... "
 if download_file "$RAW_URL/agents/broad_summary_agent.md" "$OPENCODE_DIR/agents/broad_summary_agent.md"; then
@@ -174,13 +185,13 @@ if ! command -v opencode &> /dev/null; then
     exit 1
 fi
 
-# Run the agents from repository root so opencode resolves repo-reader.json
-cd "$TARGET_DIR"
-echo "Running agents individually (workflows not supported in current opencode CLI):"
-opencode agent run broad_summary_agent --input repository_path="$TARGET_DIR" --input output_directory="$OUTPUT_BASE_DIR/summaries" || echo "⚠️  broad_summary_agent failed"
-opencode agent run connection_builder_agent --input repository_path="$TARGET_DIR" --input output_directory="$OUTPUT_BASE_DIR/mermaid_graphs" || echo "⚠️  connection_builder_agent failed"
-opencode agent run snippet_builder_agent --input repository_path="$TARGET_DIR" --input summary_files_directory="$OUTPUT_BASE_DIR/summaries" --input mermaid_files_directory="$OUTPUT_BASE_DIR/mermaid_graphs" --input output_directory="$OUTPUT_BASE_DIR/deep_dives" || echo "⚠️  snippet_builder_agent failed"
-opencode agent run documentation_website_agent --input output_base_directory="$OUTPUT_BASE_DIR" --input website_output_directory="$WEBSITE_OUTPUT_DIR" || echo "⚠️  documentation_website_agent failed"
+# Run from .opencode so opencode resolves .opencode/repo-reader.json
+cd "$SCRIPT_DIR"
+echo "Running pipeline using opencode run + subagent task invocations:"
+opencode run "Use the task tool to invoke subagent broad_summary_agent with repository_path='$TARGET_DIR' and output_directory='$OUTPUT_BASE_DIR/summaries'. Execute now and return a short status with generated file count only." || echo "⚠️  broad_summary_agent failed"
+opencode run "Use the task tool to invoke subagent connection_builder_agent with repository_path='$TARGET_DIR' and output_directory='$OUTPUT_BASE_DIR/mermaid_graphs'. Execute now and return a short status with generated file count only." || echo "⚠️  connection_builder_agent failed"
+opencode run "Use the task tool to invoke subagent snippet_builder_agent with repository_path='$TARGET_DIR', summary_files_directory='$OUTPUT_BASE_DIR/summaries', mermaid_files_directory='$OUTPUT_BASE_DIR/mermaid_graphs', and output_directory='$OUTPUT_BASE_DIR/deep_dives'. Execute now and return a short status with generated file count only." || echo "⚠️  snippet_builder_agent failed"
+opencode run --agent documentation_website_agent "Create the documentation website using output_base_directory='$OUTPUT_BASE_DIR' and website_output_directory='$WEBSITE_OUTPUT_DIR'. Return final_score and website_directory." || echo "⚠️  documentation_website_agent failed"
 
 echo ""
 echo "✅ Agents completed!"
@@ -208,6 +219,7 @@ echo ""
 echo -e "${GREEN}✅ Installation complete!${NC}"
 echo ""
 echo -e "${BLUE}📋 What's installed:${NC}"
+echo "  • 1 Project config (.opencode/repo-reader.json)"
 echo "  • 4 Main Agents (Broad Summary, Connection Builder, Snippet Builder, Documentation Website)"
 echo "  • 4 Subagents (File Scanner, Concept Splitter, Website Creator, Feedback Provider)"
 echo "  • 1 Workflow (Repository Reader)"
@@ -216,7 +228,7 @@ echo -e "${BLUE}🚀 Next steps:${NC}"
 echo "  1. Ensure you have the opencode CLI installed"
 echo "  2. Navigate to your repository: cd $TARGET_DIR"
 echo "  3. Run the agents: $OPENCODE_DIR/run.sh"
-echo "     (Note: workflows are not supported in current opencode CLI)"
+echo "     (Uses opencode run and task-based subagent invocations)"
 echo ""
 echo -e "${BLUE}📖 Documentation:${NC}"
 echo "  • See .opencode/AGENTS.md for detailed agent documentation"

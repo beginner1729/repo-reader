@@ -1,0 +1,21 @@
+{
+  "project": {
+    "name": "code-repository-reader",
+    "description": "Multi-agent system for analyzing and documenting code repositories"
+  },
+  "agents": {
+    "paths": [
+      "./agents",
+      "./subagents"
+    ]
+  },
+  "workflows": {
+    "paths": [
+      "./workflows"
+    ]
+  },
+  "defaults": {
+    "output_directory": "./output",
+    "log_level": "info"
+  }
+}

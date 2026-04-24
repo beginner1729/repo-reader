@@ -24,13 +24,13 @@ if ! command -v opencode &> /dev/null; then
     exit 1
 fi
 
-# Run the agents from repository root so opencode resolves repo-reader.json
-cd "$TARGET_DIR"
-echo "Running agents individually (workflows not supported in current opencode CLI):"
-opencode agent run broad_summary_agent --input repository_path="$TARGET_DIR" --input output_directory="$OUTPUT_BASE_DIR/summaries" || echo "⚠️  broad_summary_agent failed"
-opencode agent run connection_builder_agent --input repository_path="$TARGET_DIR" --input output_directory="$OUTPUT_BASE_DIR/mermaid_graphs" || echo "⚠️  connection_builder_agent failed"
-opencode agent run snippet_builder_agent --input repository_path="$TARGET_DIR" --input summary_files_directory="$OUTPUT_BASE_DIR/summaries" --input mermaid_files_directory="$OUTPUT_BASE_DIR/mermaid_graphs" --input output_directory="$OUTPUT_BASE_DIR/deep_dives" || echo "⚠️  snippet_builder_agent failed"
-opencode agent run documentation_website_agent --input output_base_directory="$OUTPUT_BASE_DIR" --input website_output_directory="$WEBSITE_OUTPUT_DIR" || echo "⚠️  documentation_website_agent failed"
+# Run from .opencode so opencode resolves .opencode/repo-reader.json
+cd "$SCRIPT_DIR"
+echo "Running pipeline using opencode run + subagent task invocations:"
+opencode run "Use the task tool to invoke subagent broad_summary_agent with repository_path='$TARGET_DIR' and output_directory='$OUTPUT_BASE_DIR/summaries'. Execute now and return a short status with generated file count only." || echo "⚠️  broad_summary_agent failed"
+opencode run "Use the task tool to invoke subagent connection_builder_agent with repository_path='$TARGET_DIR' and output_directory='$OUTPUT_BASE_DIR/mermaid_graphs'. Execute now and return a short status with generated file count only." || echo "⚠️  connection_builder_agent failed"
+opencode run "Use the task tool to invoke subagent snippet_builder_agent with repository_path='$TARGET_DIR', summary_files_directory='$OUTPUT_BASE_DIR/summaries', mermaid_files_directory='$OUTPUT_BASE_DIR/mermaid_graphs', and output_directory='$OUTPUT_BASE_DIR/deep_dives'. Execute now and return a short status with generated file count only." || echo "⚠️  snippet_builder_agent failed"
+opencode run --agent documentation_website_agent "Create the documentation website using output_base_directory='$OUTPUT_BASE_DIR' and website_output_directory='$WEBSITE_OUTPUT_DIR'. Return final_score and website_directory." || echo "⚠️  documentation_website_agent failed"
 
 echo ""
 echo "✅ Agents completed!"
