@@ -28,6 +28,11 @@ outputs:
     description: List of paths to generated Mermaid.js graph files
     items:
       type: string
+  - name: graph_image_files
+    type: array
+    description: List of paths to generated PNG images for Mermaid graphs
+    items:
+      type: string
 
 instructions: |
   You are the Connection Builder Agent (CBA). Your task is to analyze import
@@ -79,6 +84,10 @@ instructions: |
   Step 5: Output
   - Save each graph to a file in `output_directory` with naming convention:
     `<sanitized_filename>.mermaid.md`
+  - Also generate a rendered PNG image for each graph with naming convention:
+    `<sanitized_filename>.mermaid.png`
+  - Treat PNG generation as required output. If a PNG cannot be generated for a graph,
+    fail with a clear error listing the affected concept/file.
   - Each file should contain:
     ```markdown
     # Dependency Graph: [Filename]
@@ -95,10 +104,14 @@ instructions: |
     
     ### Summary
     [Brief description of the file's role in the dependency graph]
+
+    ### Graph Image (PNG)
+    ![Dependency Graph](./[sanitized_filename].mermaid.png)
     ```
   
   Step 6: Return
   - Return a list of all generated Mermaid.js file paths
+  - Return a list of all generated Mermaid PNG file paths
   
   Ensure all Mermaid.js syntax is valid and the graphs accurately represent
   the dependency structure of the codebase.

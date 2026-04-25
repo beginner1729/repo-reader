@@ -54,7 +54,8 @@ Phase 0: Setup and Discovery
    - Optional metadata extracted from summary header (`type`, `source_file`) if present.
 6. Validate index completeness:
    - Every concept must have all three files.
-   - If a concept is missing any component, halt with a clear error listing missing files per concept.
+   - If a concept is missing any component, the just directly invoke the agents
+       with the file name one by one.
 7. Read a minimal sample of discovered files to validate format:
    - Ensure summary/deep dive files are non-empty markdown.
    - Ensure mermaid files contain at least one mermaid graph block or graph syntax.
