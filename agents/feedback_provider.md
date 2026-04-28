@@ -8,6 +8,10 @@ tools:
   read: true
   glob: true
   bash: true
+permission:
+  external_directory:
+    "/tmp/*": "allow"
+    "/etc/*": "allow"
 inputs:
   - name: website_directory
     type: string

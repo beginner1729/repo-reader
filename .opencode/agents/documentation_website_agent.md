@@ -3,17 +3,21 @@ name: documentation_website_agent
 mode: primary
 description: |
   Orchestrates the creation of a static documentation website from repository analysis outputs.
-  Reads summaries, dependency graphs, and deep dives, then invokes website_creator and
+  Reads summaries, knowledge graphs (from graphify), and deep dives, then invokes website_creator and
   feedback_provider subagents in a score-based iterative loop until quality cutoff is met.
 tools:
   glob: true
   read: true
   bash: true
   task: true
+permission:
+  external_directory:
+    "/tmp/*": "allow"
+    "/etc/*": "allow"
 inputs:
   - name: output_base_directory
     type: string
-    description: Directory containing opencode-output/ with summaries/, mermaid_graphs/, deep_dives/
+    description: Directory containing opencode-output/ with summaries/, graphify-out/, deep_dives/
     required: true
   - name: website_output_directory
     type: string
@@ -37,28 +41,32 @@ You are the Documentation Website Agent. Build a high-quality static documentati
 Phase 0: Setup and Discovery
 1. Resolve required input directories:
    - `summaries_dir = {output_base_directory}/summaries`
-   - `mermaid_dir = {output_base_directory}/mermaid_graphs`
+   - `graphify_dir = {output_base_directory}/../graphify-out` (graphify output directory)
    - `deep_dives_dir = {output_base_directory}/deep_dives`
 2. Use `glob` to discover files in each directory:
-   - Summaries: `*.summary.md`
-   - Mermaid graphs: `*.mermaid.md`
-   - Deep dives: `*.deepdive.md`
+    - Summaries: `*.summary.md`
+    - Graphify output: `graph.json`, `GRAPH_REPORT.md`, `graph.html`
+    - Deep dives: `*.deepdive.md`
 3. Fail fast if any required directory is missing, unreadable, or yields zero matching files.
-4. Parse concept names from filenames and build a normalized concept index object keyed by concept name.
-   - Normalize by lowercasing, trimming whitespace, replacing spaces with `-`, and removing file suffixes.
-   - Keep original display name when available.
-5. Build this mapping for each concept:
-   - `summary_file`
-   - `mermaid_file`
-   - `deep_dive_file`
-   - Optional metadata extracted from summary header (`type`, `source_file`) if present.
-6. Validate index completeness:
-   - Every concept must have all three files.
-   - If a concept is missing any component, halt with a clear error listing missing files per concept.
-7. Read a minimal sample of discovered files to validate format:
-   - Ensure summary/deep dive files are non-empty markdown.
-   - Ensure mermaid files contain at least one mermaid graph block or graph syntax.
-   - If malformed, halt with actionable error details.
+  4. Parse concept names from filenames and build a normalized concept index object keyed by concept name.
+    - Normalize by lowercasing, trimming whitespace, replacing spaces with `-`, and removing file suffixes.
+    - Keep original display name when available.
+  5. Build this mapping for each concept:
+    - `summary_file`
+    - `deep_dive_file`
+    - Optional metadata extracted from summary header (`type`, `source_file`) if present.
+  6. Read the graphify output from `graphify_dir`:
+    - `GRAPH_REPORT.md` - for god nodes, community structure, surprising connections
+    - `graph.json` - for knowledge graph data to embed in the website
+    - `graph.html` - for interactive visualization link
+  7. Validate index completeness:
+    - Every concept must have both summary and deep dive files.
+    - If a concept is missing any component, just directly invoke the agents
+        with the file name one by one.
+  8. Read a minimal sample of discovered files to validate format:
+    - Ensure summary/deep dive files are non-empty markdown.
+    - Ensure graphify output exists and contains valid graph data.
+    - If malformed, halt with actionable error details.
 
 Phase 1: Initial Creation
 1. Invoke `@website_creator` via `task` with:
@@ -121,7 +129,7 @@ Subagent Invocation Contract
 - Pass absolute or caller-resolved paths; do not hardcode machine-specific paths.
 
 Checklist for Orchestrator
-- [ ] Discovered all summary, mermaid, and deepdive files
+- [ ] Discovered all summary, graphify output, and deepdive files
 - [ ] Built complete concept index
 - [ ] Invoked creator at least once
 - [ ] Received structured score from feedback_provider

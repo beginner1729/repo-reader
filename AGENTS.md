@@ -8,7 +8,7 @@ The Code Repository Reader is a multi-agent system designed to:
 1. Scan and analyze entire code repositories
 2. Identify distinct conceptual units (classes, functions, modules)
 3. Generate independent summaries for each concept
-4. Build dependency graphs showing connections between files
+4. Build knowledge graphs with community detection and confidence scoring (via graphify)
 5. Create comprehensive deep-dive documentation with code snippets
 
 ## Agent Architecture
@@ -22,16 +22,15 @@ The Code Repository Reader is a multi-agent system designed to:
 **Subagents**: File Scanner, Concept Splitter
 **Tools**: file_scanner (subagent), concept_splitter (subagent), write
 
-#### 2. Connection Builder Agent (CBA)
-**File**: `agents/connection_builder_agent.md`
-**Type**: Agent
-**Purpose**: Analyzes dependencies and creates visual import maps using Mermaid.js
+#### 2. graphify (Knowledge Graph Builder)
+**Package**: `graphifyy` (PyPI)
+**Purpose**: Builds knowledge graphs with community detection and confidence scoring. Analyzes dependencies and creates visual import maps using Mermaid.js
 **Tools**: glob, read, grep, write
 
 #### 3. Snippet Builder Agent (SB)
 **File**: `agents/snippet_builder_agent.md`
 **Type**: Agent
-**Purpose**: Generates final deep-dive documentation by aggregating BSA and CBA outputs
+**Purpose**: Generates final deep-dive documentation by aggregating BSA and graphify outputs
 **Tools**: read, write, glob
 
 ### Subagents
@@ -54,12 +53,11 @@ The Code Repository Reader is a multi-agent system designed to:
 **Type**: Workflow
 
 ### Execution Flow
-1. **Step 1 (Parallel)**:
-   - Run Broad Summary Agent (BSA)
-   - Run Connection Builder Agent (CBA) simultaneously
-2. **Step 2 (Sequential)**:
-   - Run Snippet Builder Agent (SB) after Step 1 completes
-   - Takes outputs from both BSA and CBA as inputs
+All agents run **sequentially** in this order:
+1. **Step 1**: Run graphify to build the knowledge graph
+2. **Step 2**: Run Broad Summary Agent (BSA) - reads graphify output
+3. **Step 3**: Run Snippet Builder Agent (SB) - reads BSA + graphify outputs
+4. **Step 4**: Run Documentation Website Agent - reads all outputs to build website
 
 ## Directory Structure
 
@@ -69,7 +67,6 @@ The Code Repository Reader is a multi-agent system designed to:
 ├── AGENTS.md                  # This file - system overview
 ├── agents/
 │   ├── broad_summary_agent.md
-│   ├── connection_builder_agent.md
 │   └── snippet_builder_agent.md
 ├── subagents/
 │   ├── file_scanner.md
@@ -103,6 +100,9 @@ To use this system with OpenCode:
 ```
 output/
 ├── summaries/          # BSA output - concept summaries
-├── mermaid_graphs/     # CBA output - dependency graphs
-└── deep_dives/         # SB output - comprehensive documentation
+├── deep_dives/         # SB output - comprehensive documentation
+└── graphify-out/       # graphify output - knowledge graph
+    ├── graph.json      # Full knowledge graph with nodes, edges, communities
+    ├── GRAPH_REPORT.md # God nodes, surprising connections, suggested questions
+    └── graph.html      # Interactive visualization
 ```

@@ -77,7 +77,6 @@ Or run individual test suites:
 📂 Testing agents files...
 -------------------------
 Testing frontmatter in broad_summary_agent.md... ✅ Valid frontmatter
-Testing frontmatter in connection_builder_agent.md... ✅ Valid frontmatter
 Testing frontmatter in snippet_builder_agent.md... ✅ Valid frontmatter
 
 📂 Testing subagents files...
@@ -136,9 +135,6 @@ Testing frontmatter in repo_reader_workflow.md... ✅ Valid frontmatter
 ------------------------
 Testing agent: broad_summary_agent.md
 ✅ broad_summary_agent.md: Valid YAML frontmatter
-
-Testing agent: connection_builder_agent.md
-✅ connection_builder_agent.md: Valid YAML frontmatter
 
 📋 Validating Subagents...
 ---------------------------
@@ -199,7 +195,6 @@ Testing workflow: repo_reader_workflow.md
 ✅ Can list agents
 Available agents:
   - broad_summary_agent
-  - connection_builder_agent
   - snippet_builder_agent
 
 📋 Testing workflow listing...
@@ -210,9 +205,6 @@ Available workflows:
 📋 Testing specific agents...
 🔍 Testing agent: broad_summary_agent
 ✅ Agent 'broad_summary_agent' loaded successfully
-
-🔍 Testing agent: connection_builder_agent
-✅ Agent 'connection_builder_agent' loaded successfully
 
 🔍 Testing agent: snippet_builder_agent
 ✅ Agent 'snippet_builder_agent' loaded successfully

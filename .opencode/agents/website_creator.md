@@ -10,6 +10,10 @@ tools:
   write: true
   glob: true
   edit: true
+permission:
+  external_directory:
+    "/tmp/*": "allow"
+    "/etc/*": "allow"
 inputs:
   - name: output_base_directory
     type: string

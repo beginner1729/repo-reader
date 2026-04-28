@@ -156,10 +156,18 @@ main() {
     # Test listing workflows
     test_list_workflows
     
+    # Test graphify availability
+    echo -e "${BLUE}📋 Checking graphify...${NC}"
+    if command -v graphify &> /dev/null; then
+        echo -e "${GREEN}✅ graphify CLI found${NC}"
+    else
+        echo -e "${YELLOW}⚠️  graphify CLI not found - run install.sh to set it up${NC}"
+    fi
+    echo ""
+
     # Test loading specific agents
     echo -e "${BLUE}📋 Testing specific agents...${NC}"
     test_load_agent "broad_summary_agent"
-    test_load_agent "connection_builder_agent"
     test_load_agent "snippet_builder_agent"
     
     # Note: Workflow commands are not available in current opencode CLI

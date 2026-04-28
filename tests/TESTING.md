@@ -298,7 +298,7 @@ After tests pass:
 
 3. **View documentation**:
    - Check `opencode-output/` directory for generated docs
-   - View summaries, dependency graphs, and deep-dive analyses
+   - View summaries, knowledge graphs (via graphify), and deep-dive analyses
 
 ## Support
 

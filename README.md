@@ -1,6 +1,6 @@
 # Code Repository Reader for OpenCode
 
-A powerful multi-agent system for analyzing and documenting code repositories using the OpenCode CLI. Automatically generates comprehensive documentation including concept summaries, dependency graphs, and deep-dive analyses with highlighted code snippets.
+A powerful multi-agent system for analyzing and documenting code repositories using the OpenCode CLI. Automatically generates comprehensive documentation including concept summaries, knowledge graphs (via graphify), and deep-dive analyses with highlighted code snippets.
 
 ## 🚀 Quick Start
 
@@ -32,14 +32,14 @@ cp -r .opencode /path/to/your/project/
 3. Run the agents:
 ```bash
 cd /path/to/your/project
-opencode agent run broad_summary_agent
-opencode agent run connection_builder_agent
-opencode agent run snippet_builder_agent
+# Run the full workflow via helper script
+.opencode/run.sh
 ```
 
 ## 📋 Prerequisites
 
 - [OpenCode CLI](https://opencode.ai) installed and configured
+- Python 3.10+ (for graphify knowledge graph builder)
 - Git repository (optional but recommended)
 - curl or wget (for installation script)
 
@@ -49,28 +49,35 @@ The Code Repository Reader uses a **three-stage multi-agent pipeline**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     STAGE 1 (Parallel)                       │
-│  ┌─────────────────────┐    ┌─────────────────────────┐     │
-│  │ Broad Summary Agent │    │ Connection Builder Agent│     │
-│  │       (BSA)         │    │         (CBA)           │     │
-│  └──────────┬──────────┘    └────────────┬────────────┘     │
-└─────────────┼────────────────────────────┼──────────────────┘
-              │                            │
-              ▼                            ▼
-    ┌────────────────────┐      ┌──────────────────────┐
-    │   Concept          │      │   Dependency         │
-    │   Summaries        │      │   Graphs             │
-    └─────────┬──────────┘      └──────────┬───────────┘
-              │                            │
-              └────────────┬───────────────┘
-                           ▼
-┌──────────────────────────────────────────────────────────────┐
-│                     STAGE 2 (Sequential)                      │
-│              ┌───────────────────────────────┐               │
-│              │     Snippet Builder Agent     │               │
-│              │           (SB)                │               │
-│              └───────────────┬───────────────┘               │
-└──────────────────────────────┼───────────────────────────────┘
+│                     STAGE 1 (Sequential)                     │
+│              ┌───────────────────────────────┐              │
+│              │  graphify (Knowledge Graph)   │              │
+│              │       Builder                 │              │
+│              └───────────────┬───────────────┘              │
+└──────────────────────────────┼──────────────────────────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │   Knowledge Graph    │
+                    │   (graph.json, etc.) │
+                    └──────────┬───────────┘
+                               │
+┌──────────────────────────────┼──────────────────────────────┐
+│                     STAGE 2 (Sequential)                     │
+│              ┌───────────────────────────────┐              │
+│              │   Broad Summary Agent (BSA)   │              │
+│              └───────────────┬───────────────┘              │
+└──────────────────────────────┼──────────────────────────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │   Concept Summaries  │
+                    └──────────┬───────────┘
+                               │
+┌──────────────────────────────┼──────────────────────────────┐
+│                     STAGE 3 (Sequential)                     │
+│              ┌───────────────────────────────┐              │
+│              │   Snippet Builder Agent (SB)  │              │
+│              └───────────────┬───────────────┘              │
+└──────────────────────────────┼──────────────────────────────┘
                                ▼
                     ┌──────────────────────┐
                     │   Deep-Dive          │
@@ -128,41 +135,36 @@ class UserService:
 
 ---
 
-#### 2. Connection Builder Agent (CBA)
-**Purpose**: Analyzes dependencies across the codebase and creates visual import maps using Mermaid.js.
+#### 2. graphify (Knowledge Graph Builder)
+**Package**: `graphifyy` (PyPI)
+**Purpose**: Builds knowledge graphs with community detection and confidence scoring. Analyzes dependencies and creates visual import maps.
 
 **Logic**:
 1. Scans all code files in the repository
 2. Parses import statements (supports Python, JavaScript, TypeScript, Java, Go, Rust, etc.)
 3. Identifies both internal and external dependencies
-4. Generates Mermaid.js directed graphs showing connections
+4. Builds knowledge graphs with nodes, edges, and communities
+5. Generates interactive visualizations and graph reports
 
-**Output**: Mermaid graph files in `output/mermaid_graphs/<filename>.mermaid.md`
+**Output**: Knowledge graph files in `output/graphify-out/`
+- `graph.json` - Full knowledge graph with nodes, edges, communities
+- `GRAPH_REPORT.md` - God nodes, surprising connections, suggested questions
+- `graph.html` - Interactive visualization
 
 **Example Output Structure**:
 ```markdown
-# Dependency Graph: UserService
+# Graph Report
 
-## File: src/services/user.py
+## God Nodes
+- UserService (centrality: 0.85)
+- DatabaseConnection (centrality: 0.72)
 
-### Import Map
-```mermaid
-graph TD
-    A[UserService] --> B[DatabaseConnection]
-    A --> C[PasswordHasher]
-    A --> D[EmailValidator]
-    B --> E[ConnectionPool]
-    C --> F[bcrypt]
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-```
+## Surprising Connections
+- UserService → EmailValidator (unexpected direct dependency)
 
-### Imported By
-- src/api/auth_controller.py
-- src/api/profile_controller.py
-- src/admin/user_admin.py
-
-### Summary
-UserService is a central component imported by 3 files. It depends on database, hashing, and validation services.
+## Suggested Questions
+- Why does UserService depend on EmailValidator directly?
+- Should PasswordHasher be extracted into a shared utility?
 ```
 
 ---
@@ -172,7 +174,7 @@ UserService is a central component imported by 3 files. It depends on database, 
 
 **Inputs**:
 1. Summary outputs from BSA
-2. Mermaid.js graphs from CBA
+2. Knowledge graph from graphify
 3. Raw source code from repository
 
 **Logic**:
@@ -195,7 +197,7 @@ UserService is the core authentication service handling user login, registration
 - Lines: `15-89`
 
 ## Architecture & Dependencies
-[Mermaid graph from CBA]
+[Knowledge graph from graphify]
 
 ### Direct Dependencies
 - **DatabaseConnection**: Provides PostgreSQL connectivity
@@ -315,31 +317,28 @@ def _hash_password(self, password: str) -> str:
 
 **Execution Flow**:
 
-#### Step 1: Parallel Analysis (Simultaneous)
-Runs two agents in parallel:
+#### Step 1: Sequential Analysis
+Runs three agents sequentially:
 
-1. **Broad Summary Agent (BSA)**
+1. **graphify (Knowledge Graph Builder)**
+   - Input: `repository_path`, `output_directory=graphify-out/`
+   - Output: `graph_files` (array of paths)
+
+2. **Broad Summary Agent (BSA)**
    - Input: `repository_path`, `output_directory=summaries/`
    - Output: `summary_files` (array of paths)
-
-2. **Connection Builder Agent (CBA)**
-   - Input: `repository_path`, `output_directory=mermaid_graphs/`
-   - Output: `mermaid_files` (array of paths)
-
-#### Step 2: Sequential Documentation
-Runs after Step 1 completes:
 
 3. **Snippet Builder Agent (SB)**
    - Input: 
      - `repository_path`
      - `summary_files_directory=summaries/`
-     - `mermaid_files_directory=mermaid_graphs/`
+     - `graph_files_directory=graphify-out/`
      - `output_directory=deep_dives/`
    - Output: `documentation_files` (array of paths)
 
 **Outputs**:
+- `graph_files`: Paths to all knowledge graph files generated by graphify
 - `summary_files`: Paths to all summary files generated by BSA
-- `mermaid_files`: Paths to all Mermaid.js graph files generated by CBA
 - `documentation_files`: Paths to all deep-dive documentation files generated by SB
 - `output_directories`: Map of output locations
 
@@ -359,10 +358,10 @@ your-project/
 │   │   ├── user_service.summary.md
 │   │   ├── auth_controller.summary.md
 │   │   └── ...
-│   ├── mermaid_graphs/           # CBA output
-│   │   ├── user_service.mermaid.md
-│   │   ├── auth_controller.mermaid.md
-│   │   └── ...
+│   ├── graphify-out/             # graphify output
+│   │   ├── graph.json            # Full knowledge graph
+│   │   ├── GRAPH_REPORT.md       # Graph analysis report
+│   │   └── graph.html            # Interactive visualization
 │   └── deep_dives/               # SB output
 │       ├── user_service.deepdive.md
 │       ├── auth_controller.deepdive.md
@@ -389,12 +388,12 @@ curl -sSL https://raw.githubusercontent.com/beginner1729/repo-reader/main/instal
 
 ```bash
 # Run with custom output directory
-opencode agent run broad_summary_agent
-opencode agent run connection_builder_agent
-opencode agent run snippet_builder_agent
+opencode agent run graphify
+# Run the full workflow
+.opencode/run.sh
 
-# Run specific agent only
-opencode agent run broad_summary_agent
+# Or run graphify skill directly via opencode
+opencode run "/graphify . --directed"
 ```
 
 ### Using the Helper Script
