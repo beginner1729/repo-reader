@@ -52,16 +52,17 @@ echo -e "${BLUE}--- Python Virtual Environment Setup ---${NC}"
 
 GRAPHIFY_VENV_DIR="$TARGET_DIR/.graphify-venv"
 
-# Check for Python 3.10+
+# Detect Python installation using command -v (portable which/where)
 PYTHON_BIN=""
-for py_cmd in python3.13 python3.12 python3.11 python3.10 python3; do
-    if command -v "$py_cmd" &>/dev/null; then
+for py_cmd in python3 python; do
+    PYTHON_PATH=$(command -v "$py_cmd" 2>/dev/null || true)
+    if [ -n "$PYTHON_PATH" ]; then
         PY_VER=$("$py_cmd" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
         PY_MAJOR=$("$py_cmd" -c "import sys; print(sys.version_info.major)" 2>/dev/null)
         PY_MINOR=$("$py_cmd" -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
         if [ "$PY_MAJOR" -ge 3 ] && [ "$PY_MINOR" -ge 10 ]; then
             PYTHON_BIN="$py_cmd"
-            echo -e "${GREEN}Found Python $PY_VER via $py_cmd${NC}"
+            echo -e "${GREEN}Found Python $PY_VER at $PYTHON_PATH${NC}"
             break
         fi
     fi
@@ -71,6 +72,29 @@ if [ -z "$PYTHON_BIN" ]; then
     echo -e "${RED}Error: Python 3.10+ is required but not found${NC}"
     echo "Please install Python 3.10 or later: https://www.python.org/downloads/"
     exit 1
+fi
+
+# Detect package installer: prefer uv, then pip
+USE_UV=false
+UV_PATH=$(command -v uv 2>/dev/null || true)
+if [ -n "$UV_PATH" ]; then
+    echo -e "${GREEN}Found uv at $UV_PATH${NC}"
+    USE_UV=true
+else
+    PIP_CMD=""
+    for pip_cmd in pip3 pip; do
+        PIP_PATH=$(command -v "$pip_cmd" 2>/dev/null || true)
+        if [ -n "$PIP_PATH" ]; then
+            PIP_CMD="$pip_cmd"
+            echo -e "${GREEN}Found pip at $PIP_PATH${NC}"
+            break
+        fi
+    done
+    
+    if [ -z "$PIP_CMD" ]; then
+        echo -e "${RED}Error: Neither uv nor pip found. Please install uv (https://docs.astral.sh/uv/) or pip.${NC}"
+        exit 1
+    fi
 fi
 
 # Ask user about virtual env preference (non-interactive skip if piped)
@@ -86,17 +110,24 @@ fi
 if [[ "$VENV_CHOICE" =~ ^[Yy]$ ]]; then
     if [ ! -d "$GRAPHIFY_VENV_DIR" ]; then
         echo -e "${BLUE}Creating Python virtual environment...${NC}"
-        "$PYTHON_BIN" -m venv "$GRAPHIFY_VENV_DIR"
+        if [ "$USE_UV" = true ]; then
+            uv venv "$GRAPHIFY_VENV_DIR" --python "$PYTHON_BIN"
+        else
+            "$PYTHON_BIN" -m venv "$GRAPHIFY_VENV_DIR"
+        fi
         echo -e "${GREEN}Virtual environment created at $GRAPHIFY_VENV_DIR${NC}"
     else
         echo -e "${GREEN}Virtual environment already exists at $GRAPHIFY_VENV_DIR${NC}"
     fi
     GRAPHIFY_BIN="$GRAPHIFY_VENV_DIR/bin/graphify"
-    PIP_BIN="$GRAPHIFY_VENV_DIR/bin/pip"
     echo ""
     echo -e "${BLUE}Installing graphify in virtual environment...${NC}"
-    "$PIP_BIN" install --upgrade pip -q
-    "$PIP_BIN" install graphifyy
+    if [ "$USE_UV" = true ]; then
+        uv pip install --python "$GRAPHIFY_VENV_DIR/bin/python" graphifyy
+    else
+        "$GRAPHIFY_VENV_DIR/bin/pip" install --upgrade pip -q
+        "$GRAPHIFY_VENV_DIR/bin/pip" install graphifyy
+    fi
     echo -e "${GREEN}graphify installed in virtual environment${NC}"
 
     # Install graphify skill for opencode
@@ -113,13 +144,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ACTIVATE_EOF
     chmod +x "$GRAPHIFY_VENV_DIR/activate-graphify.sh"
 else
-    # Use the first available pip to install graphify system-wide/globally
+    # Install graphify globally using detected installer
     echo -e "${BLUE}Installing graphify using $PYTHON_BIN...${NC}"
-    "$PYTHON_BIN" -m pip install graphifyy 2>/dev/null || \
+    if [ "$USE_UV" = true ]; then
+        uv pip install --system graphifyy 2>/dev/null || {
+            echo -e "${RED}Error: Failed to install graphify with uv${NC}"
+            exit 1
+        }
+    else
+        "$PYTHON_BIN" -m pip install graphifyy 2>/dev/null || \
         "$PYTHON_BIN" -m pip install graphifyy --break-system-packages 2>/dev/null || {
             echo -e "${RED}Error: Failed to install graphify${NC}"
             exit 1
         }
+    fi
     GRAPHIFY_BIN="graphify"
 fi
 
