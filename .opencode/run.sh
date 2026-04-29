@@ -10,24 +10,69 @@ TARGET_DIR="$(dirname "$SCRIPT_DIR")"
 OUTPUT_BASE_DIR="$TARGET_DIR/opencode-output"
 WEBSITE_OUTPUT_DIR="$TARGET_DIR/website"
 GRAPHIFY_OUT_DIR="$TARGET_DIR/graphify-out"
-MODEL="${OPENCODE_MODEL:-openai/gpt-5.3-codex}"
+# Available model variants
+MODEL="${OPENCODE_MODEL:-}"
 
-while getopts "m:h" opt; do
+while getopts "m:lh" opt; do
     case "$opt" in
         m)
             MODEL="$OPTARG"
             ;;
-        h)
+        l)
+            echo "Available model variants:"
+            echo "  openai/gpt-5.3-codex   (default - OpenAI GPT-5.3 Codex)"
+            echo "  anthropic/claude-sonnet-4  (Anthropic Claude Sonnet 4)"
+            echo "  anthropic/claude-opus-4    (Anthropic Claude Opus 4)"
+            echo "  google/gemini-2.5-pro      (Google Gemini 2.5 Pro)"
+            echo "  openai/gpt-5.1-codex       (OpenAI GPT-5.1 Codex - faster)"
+            echo "  deepseek/deepseek-chat     (DeepSeek Chat)"
+            echo ""
             echo "Usage: $0 [-m model]"
-            echo "  -m model   OpenCode model id (default: $MODEL)"
+            echo "Environment variable: export OPENCODE_MODEL=anthropic/claude-sonnet-4"
+            exit 0
+            ;;
+        h)
+            echo "Usage: $0 [-m model] [-l]"
+            echo "  -m model   OpenCode model id"
+            echo "  -l         List available model variants"
+            echo "  -h         Show this help"
+            echo ""
+            echo "Environment: OPENCODE_MODEL overrides default"
+            echo "Examples:"
+            echo "  $0 -m anthropic/claude-sonnet-4"
+            echo "  OPENCODE_MODEL=google/gemini-2.5-pro $0"
             exit 0
             ;;
         *)
-            echo "Usage: $0 [-m model]"
+            echo "Usage: $0 [-m model] [-l] [-h]"
             exit 1
             ;;
     esac
 done
+
+# If no model specified via flag or env, show interactive prompt (only in TTY)
+if [ -z "$MODEL" ]; then
+    if [ -t 0 ] && [ -t 1 ]; then
+        echo "Select model variant:"
+        echo "  [1] openai/gpt-5.3-codex (default - balanced)"
+        echo "  [2] anthropic/claude-sonnet-4 (reasoning)"
+        echo "  [3] anthropic/claude-opus-4 (most capable)"
+        echo "  [4] google/gemini-2.5-pro (long context)"
+        echo "  [5] openai/gpt-5.1-codex (faster)"
+        echo "  [6] deepseek/deepseek-chat (cost-effective)"
+        read -p "Enter choice [1-6] or press Enter for default: " CHOICE
+        case "$CHOICE" in
+            2) MODEL="anthropic/claude-sonnet-4" ;;
+            3) MODEL="anthropic/claude-opus-4" ;;
+            4) MODEL="google/gemini-2.5-pro" ;;
+            5) MODEL="openai/gpt-5.1-codex" ;;
+            6) MODEL="deepseek/deepseek-chat" ;;
+            *) MODEL="openai/gpt-5.3-codex" ;;
+        esac
+    else
+        MODEL="openai/gpt-5.3-codex"
+    fi
+fi
 
 echo "Code Repository Reader Workflow"
 echo "=========================================="
