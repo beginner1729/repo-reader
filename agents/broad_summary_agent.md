@@ -5,7 +5,11 @@ description: |
   Main agent that reads the entire repository and generates independent summaries.
   Uses subagents to scan files and split concepts, then produces summary files
   for each distinct conceptual unit found in the codebase.
-  
+
+  For each coding file, it reads the file itself and also uses the graphify knowledge
+  graph to identify and read related files (dependencies, dependents, and shared
+  contracts) so that every summary is enriched with full contextual understanding.
+
   **Dependencies**: Requires graphify output to be available at `graphify_files_directory`.
   This agent should run AFTER graphify has completed, so it can leverage the knowledge
   graph's community structure, god nodes, and dependency analysis.
@@ -67,19 +71,32 @@ instructions: |
       - `file_content`: The file's raw content
     - The subagent will return one or more conceptual blocks
   
-  Step 3: Summary Generation
+  Step 3: Read Related Files for Better Context
+  - For each file returned by the file scanner:
+    - Look up the file/concept in the graphify knowledge graph
+    - Identify all related files (dependency edges: EXTRACTED, INFERRED, AMBIGUOUS)
+    - Read those related files to understand:
+      - What interfaces or contracts the concept depends on
+      - How it is used by other concepts
+      - What shared types, utilities, or constants it relies on
+    - This additional context is critical for producing an accurate and complete summary
+
+  Step 4: Summary Generation
   - For each concept identified:
     - Cross-reference with graphify knowledge graph:
       - Is this concept a "god node"? (high-degree in the graph)
       - Which community does it belong to?
       - What are its key dependencies (EXTRACTED edges)?
       - What are surprising connections (INFERRED edges)?
+    - Read and analyze the actual source file for this concept
+    - Also read any related files identified in Step 3 to enrich the summary
     - Generate a comprehensive summary that includes:
       - The concept's purpose and responsibility
       - Key methods/functions and their roles
       - Dependencies and relationships (from graphify + code analysis)
       - Important implementation details
       - Community context (from graphify clustering)
+      - How it interacts with related files/concepts
     - Create a summary file in the `output_directory` with naming convention:
       `<sanitized_concept_name>.summary.md`
     - Each summary file should follow this structure:
@@ -111,7 +128,7 @@ instructions: |
       ```
       ```
   
-  Step 4: Output
+  Step 5: Output
   - Return a list of all generated summary file paths
   - Ensure each summary is self-contained and independently understandable
   

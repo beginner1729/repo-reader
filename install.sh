@@ -54,7 +54,7 @@ GRAPHIFY_VENV_DIR="$TARGET_DIR/.graphify-venv"
 
 # Detect Python installation using command -v (portable which/where)
 PYTHON_BIN=""
-for py_cmd in python3 python; do
+for py_cmd in python; do
     PYTHON_PATH=$(command -v "$py_cmd" 2>/dev/null || true)
     if [ -n "$PYTHON_PATH" ]; then
         PY_VER=$("$py_cmd" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
