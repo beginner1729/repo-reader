@@ -164,12 +164,12 @@ fi
 echo ""
 
 ###############################################################################
-# Step 2: Download agent configuration files
+# Step 2: Download agent configuration files into .opencode/
 ###############################################################################
 echo -e "${BLUE}Creating directory structure...${NC}"
 mkdir -p "$OPENCODE_DIR"/{agents,subagents,workflows}
 
-echo -e "${BLUE}Downloading agent configurations...${NC}"
+echo -e "${BLUE}Downloading agent configurations into .opencode/ ...${NC}"
 
 # Function to download file with error handling
 download_file() {
@@ -193,7 +193,7 @@ download_file() {
     return 0
 }
 
-# Download project config for local agent discovery in .opencode
+# Project config for local agent discovery in .opencode
 echo -n "  . repo-reader.json (config)... "
 if download_file "$RAW_URL/repo-reader.json" "$OPENCODE_DIR/repo-reader.json"; then
     echo -e "${GREEN}OK${NC}"
@@ -204,7 +204,15 @@ fi
 # Remove stale .opencode/opencode.json if present (unsupported schema in this project)
 rm -f "$OPENCODE_DIR/opencode.json"
 
-# Download agents
+# AGENTS.md reference documentation
+echo -n "  . AGENTS.md... "
+if download_file "$RAW_URL/AGENTS.md" "$OPENCODE_DIR/AGENTS.md"; then
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
+# Agents
 echo -n "  . broad_summary_agent... "
 if download_file "$RAW_URL/agents/broad_summary_agent.md" "$OPENCODE_DIR/agents/broad_summary_agent.md"; then
     echo -e "${GREEN}OK${NC}"
@@ -240,7 +248,7 @@ else
     echo -e "${YELLOW}SKIPPED${NC}"
 fi
 
-# Download subagents
+# Subagents
 echo -n "  . file_scanner (subagent)... "
 if download_file "$RAW_URL/subagents/file_scanner.md" "$OPENCODE_DIR/subagents/file_scanner.md"; then
     echo -e "${GREEN}OK${NC}"
@@ -269,9 +277,42 @@ else
     echo -e "${YELLOW}SKIPPED${NC}"
 fi
 
-# Download workflow
+# Workflow
 echo -n "  . repo_reader_workflow... "
 if download_file "$RAW_URL/workflows/repo_reader_workflow.md" "$OPENCODE_DIR/workflows/repo_reader_workflow.md"; then
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
+# Copy-paste prompt scripts for TUI usage
+echo -n "  . prompt_graphify.sh... "
+if download_file "$RAW_URL/.opencode/prompt_graphify.sh" "$OPENCODE_DIR/prompt_graphify.sh"; then
+    chmod +x "$OPENCODE_DIR/prompt_graphify.sh"
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
+echo -n "  . prompt_broad_summary.sh... "
+if download_file "$RAW_URL/.opencode/prompt_broad_summary.sh" "$OPENCODE_DIR/prompt_broad_summary.sh"; then
+    chmod +x "$OPENCODE_DIR/prompt_broad_summary.sh"
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
+echo -n "  . prompt_snippet_builder.sh... "
+if download_file "$RAW_URL/.opencode/prompt_snippet_builder.sh" "$OPENCODE_DIR/prompt_snippet_builder.sh"; then
+    chmod +x "$OPENCODE_DIR/prompt_snippet_builder.sh"
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
+echo -n "  . prompt_documentation_website.sh... "
+if download_file "$RAW_URL/.opencode/prompt_documentation_website.sh" "$OPENCODE_DIR/prompt_documentation_website.sh"; then
+    chmod +x "$OPENCODE_DIR/prompt_documentation_website.sh"
     echo -e "${GREEN}OK${NC}"
 else
     echo -e "${YELLOW}SKIPPED${NC}"
@@ -433,9 +474,11 @@ echo -e "${GREEN}Installation complete!${NC}"
 echo ""
 echo -e "${BLUE}What's installed:${NC}"
 echo "  . 1 Project config (.opencode/repo-reader.json)"
-echo "  . 4 Main Agents (graphify, Broad Summary, Snippet Builder, Documentation Website)"
+echo "  . 1 Agent documentation (.opencode/AGENTS.md)"
+echo "  . 5 Agents (Broad Summary, Snippet Builder, Documentation Website, Website Creator, Feedback Provider)"
 echo "  . 4 Subagents (File Scanner, Concept Splitter, Website Creator, Feedback Provider)"
 echo "  . 1 Workflow (Repository Reader)"
+echo "  . 4 Copy-paste prompts for TUI (graphify, broad_summary, snippet_builder, documentation_website)"
 echo "  . graphify (knowledge graph builder)"
 if [ -d "$GRAPHIFY_VENV_DIR" ]; then
     echo "  . Python virtual env: $GRAPHIFY_VENV_DIR"
@@ -444,7 +487,12 @@ echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo "  1. Ensure you have the opencode CLI installed"
 echo "  2. Navigate to your repository: cd $TARGET_DIR"
-echo "  3. Run the agents: $OPENCODE_DIR/run.sh"
+echo "  3. Run all agents:   $OPENCODE_DIR/run.sh"
+echo "  4. Or use TUI prompts:"
+echo "       $OPENCODE_DIR/prompt_graphify.sh | pbcopy"
+echo "       $OPENCODE_DIR/prompt_broad_summary.sh | pbcopy"
+echo "       $OPENCODE_DIR/prompt_snippet_builder.sh | pbcopy"
+echo "       $OPENCODE_DIR/prompt_documentation_website.sh | pbcopy"
 echo ""
 echo -e "${BLUE}Documentation:${NC}"
 echo "  . See .opencode/AGENTS.md for detailed agent documentation"
