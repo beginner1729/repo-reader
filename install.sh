@@ -25,6 +25,7 @@ RAW_URL="https://raw.githubusercontent.com/beginner1729/repo-reader/main"
 # Default target directory
 TARGET_DIR="${1:-.}"
 OPENCODE_DIR="$TARGET_DIR/.opencode"
+CLAUDE_DIR="$TARGET_DIR/.claude"
 
 echo -e "${BLUE}OpenCode Agents Installer${NC}"
 echo "================================"
@@ -321,6 +322,76 @@ fi
 echo ""
 
 ###############################################################################
+# Step 2b: Download Claude Code agent configuration files into .claude/
+###############################################################################
+echo -e "${BLUE}Installing Claude Code agents into .claude/ ...${NC}"
+mkdir -p "$CLAUDE_DIR/agents"
+
+CLAUDE_AGENTS=(
+    broad_summary_agent
+    concept_splitter
+    documentation_website_agent
+    feedback_provider
+    file_scanner
+    snippet_builder_agent
+    website_creator
+)
+
+for agent in "${CLAUDE_AGENTS[@]}"; do
+    echo -n "  . $agent... "
+    if download_file "$RAW_URL/.claude/agents/$agent.md" "$CLAUDE_DIR/agents/$agent.md"; then
+        echo -e "${GREEN}OK${NC}"
+    else
+        echo -e "${YELLOW}SKIPPED${NC}"
+    fi
+done
+
+# Copy-paste prompt scripts + run.sh for Claude Code
+CLAUDE_SCRIPTS=(
+    prompt.sh
+    prompt_graphify.sh
+    prompt_broad_summary.sh
+    prompt_snippet_builder.sh
+    prompt_documentation_website.sh
+    run.sh
+)
+
+for script in "${CLAUDE_SCRIPTS[@]}"; do
+    echo -n "  . $script... "
+    if download_file "$RAW_URL/.claude/$script" "$CLAUDE_DIR/$script"; then
+        chmod +x "$CLAUDE_DIR/$script"
+        echo -e "${GREEN}OK${NC}"
+    else
+        echo -e "${YELLOW}SKIPPED${NC}"
+    fi
+done
+
+# Write a portable settings.json (use relative paths so it works for any user)
+if [ ! -f "$CLAUDE_DIR/settings.json" ]; then
+    echo -n "  . settings.json... "
+    cat > "$CLAUDE_DIR/settings.json" << 'CLAUDE_SETTINGS_EOF'
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(graphify *)",
+      "Bash(./.claude/run.sh*)",
+      "Bash(./.claude/prompt*.sh*)",
+      "Bash(chmod +x *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)"
+    ]
+  }
+}
+CLAUDE_SETTINGS_EOF
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "  . settings.json... ${YELLOW}EXISTS (kept)${NC}"
+fi
+
+echo ""
+
+###############################################################################
 # Step 3: Create output directory structure
 ###############################################################################
 echo -e "${BLUE}Creating output directory...${NC}"
@@ -473,12 +544,8 @@ echo ""
 echo -e "${GREEN}Installation complete!${NC}"
 echo ""
 echo -e "${BLUE}What's installed:${NC}"
-echo "  . 1 Project config (.opencode/repo-reader.json)"
-echo "  . 1 Agent documentation (.opencode/AGENTS.md)"
-echo "  . 5 Agents (Broad Summary, Snippet Builder, Documentation Website, Website Creator, Feedback Provider)"
-echo "  . 4 Subagents (File Scanner, Concept Splitter, Website Creator, Feedback Provider)"
-echo "  . 1 Workflow (Repository Reader)"
-echo "  . 4 Copy-paste prompts for TUI (graphify, broad_summary, snippet_builder, documentation_website)"
+echo "  . OpenCode: .opencode/ (agents, subagents, workflow, prompts, run.sh)"
+echo "  . Claude Code: .claude/ (7 agents, prompts, run.sh, settings.json)"
 echo "  . graphify (knowledge graph builder)"
 if [ -d "$GRAPHIFY_VENV_DIR" ]; then
     echo "  . Python virtual env: $GRAPHIFY_VENV_DIR"
@@ -487,12 +554,11 @@ echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo "  1. Ensure you have the opencode CLI installed"
 echo "  2. Navigate to your repository: cd $TARGET_DIR"
-echo "  3. Run all agents:   $OPENCODE_DIR/run.sh"
+echo "  3. Run all agents (OpenCode):   $OPENCODE_DIR/run.sh"
+echo "     Run all agents (Claude Code): $CLAUDE_DIR/run.sh"
 echo "  4. Or use TUI prompts:"
-echo "       $OPENCODE_DIR/prompt_graphify.sh | pbcopy"
-echo "       $OPENCODE_DIR/prompt_broad_summary.sh | pbcopy"
-echo "       $OPENCODE_DIR/prompt_snippet_builder.sh | pbcopy"
-echo "       $OPENCODE_DIR/prompt_documentation_website.sh | pbcopy"
+echo "       $OPENCODE_DIR/prompt_graphify.sh | pbcopy   # OpenCode"
+echo "       $CLAUDE_DIR/prompt_graphify.sh | pbcopy     # Claude Code"
 echo ""
 echo -e "${BLUE}Documentation:${NC}"
 echo "  . See .opencode/AGENTS.md for detailed agent documentation"
