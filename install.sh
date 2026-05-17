@@ -249,6 +249,13 @@ else
     echo -e "${YELLOW}SKIPPED${NC}"
 fi
 
+echo -n "  . chat_creator_agent... "
+if download_file "$RAW_URL/agents/chat_creator_agent.md" "$OPENCODE_DIR/agents/chat_creator_agent.md"; then
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
 # Subagents
 echo -n "  . file_scanner (subagent)... "
 if download_file "$RAW_URL/subagents/file_scanner.md" "$OPENCODE_DIR/subagents/file_scanner.md"; then
@@ -319,6 +326,14 @@ else
     echo -e "${YELLOW}SKIPPED${NC}"
 fi
 
+echo -n "  . prompt_chat.sh... "
+if download_file "$RAW_URL/.opencode/prompt_chat.sh" "$OPENCODE_DIR/prompt_chat.sh"; then
+    chmod +x "$OPENCODE_DIR/prompt_chat.sh"
+    echo -e "${GREEN}OK${NC}"
+else
+    echo -e "${YELLOW}SKIPPED${NC}"
+fi
+
 echo ""
 
 ###############################################################################
@@ -335,6 +350,7 @@ CLAUDE_AGENTS=(
     file_scanner
     snippet_builder_agent
     website_creator
+    chat_creator_agent
 )
 
 for agent in "${CLAUDE_AGENTS[@]}"; do
@@ -353,6 +369,7 @@ CLAUDE_SCRIPTS=(
     prompt_broad_summary.sh
     prompt_snippet_builder.sh
     prompt_documentation_website.sh
+    prompt_chat.sh
     run.sh
 )
 
@@ -413,7 +430,7 @@ cat > "$OPENCODE_DIR/run.sh" << RUNEOF
 #!/bin/bash
 # Helper script to run the repo reader workflow
 # Run via opencode: .opencode/run.sh
-# All four agents run SEQUENTIALLY: graphify -> broad_summary -> snippet_builder -> documentation_website
+# All five agents run SEQUENTIALLY: graphify -> broad_summary -> snippet_builder -> documentation_website -> chat_creator
 
 set -e
 
@@ -473,7 +490,7 @@ fi
 # Run from .opencode so opencode resolves .opencode/repo-reader.json
 cd "\$SCRIPT_DIR"
 
-echo "[1/4] graphify - building knowledge graph (via opencode skill)"
+echo "[1/5] graphify - building knowledge graph (via opencode skill)"
 # Ensure graphify skill is installed for opencode
 if command -v graphify &> /dev/null; then
     graphify install --platform opencode 2>/dev/null || true
@@ -482,16 +499,20 @@ fi
 opencode run -m "\$MODEL" "/graphify \$TARGET_DIR --directed" 2>&1 || echo "Warning: graphify failed or partially completed"
 echo ""
 
-echo "[2/4] broad_summary_agent"
+echo "[2/5] broad_summary_agent"
 opencode run -m "\$MODEL" "Use the task tool to invoke subagent broad_summary_agent with repository_path='\$TARGET_DIR', output_directory='\$OUTPUT_BASE_DIR/summaries', and graphify_files_directory='\$GRAPHIFY_OUT_DIR'. Execute now and return a short status with generated file count only." || echo "Warning: broad_summary_agent failed"
 echo ""
 
-echo "[3/4] snippet_builder_agent"
+echo "[3/5] snippet_builder_agent"
 opencode run -m "\$MODEL" "Use the task tool to invoke subagent snippet_builder_agent with repository_path='\$TARGET_DIR', summary_files_directory='\$OUTPUT_BASE_DIR/summaries', graphify_files_directory='\$GRAPHIFY_OUT_DIR', and output_directory='\$OUTPUT_BASE_DIR/deep_dives'. Execute now and return a short status with generated file count only." || echo "Warning: snippet_builder_agent failed"
 echo ""
 
-echo "[4/4] documentation_website_agent"
+echo "[4/5] documentation_website_agent"
 opencode run -m "\$MODEL" --agent documentation_website_agent "Create the documentation website using output_base_directory='\$OUTPUT_BASE_DIR' and website_output_directory='\$WEBSITE_OUTPUT_DIR'. Return final_score and website_directory." || echo "Warning: documentation_website_agent failed"
+echo ""
+
+echo "[5/5] chat_creator_agent"
+opencode run -m "\$MODEL" --agent chat_creator_agent "Add a repository-focused chat widget to the documentation website using website_output_directory='\$WEBSITE_OUTPUT_DIR', output_base_directory='\$OUTPUT_BASE_DIR', graphify_files_directory='\$GRAPHIFY_OUT_DIR', and repository_path='\$TARGET_DIR'. Return validation_checklist_passed and files_created." || echo "Warning: chat_creator_agent failed"
 echo ""
 
 echo ""
@@ -499,6 +520,7 @@ echo "Agents completed!"
 echo "Check graphify output in: \$GRAPHIFY_OUT_DIR"
 echo "Check analysis output in: \$OUTPUT_BASE_DIR"
 echo "Check website output in: \$WEBSITE_OUTPUT_DIR"
+echo "Start website + chat:     \$WEBSITE_OUTPUT_DIR/start.sh"
 RUNEOF
 
 chmod +x "$OPENCODE_DIR/run.sh"
@@ -545,7 +567,7 @@ echo -e "${GREEN}Installation complete!${NC}"
 echo ""
 echo -e "${BLUE}What's installed:${NC}"
 echo "  . OpenCode: .opencode/ (agents, subagents, workflow, prompts, run.sh)"
-echo "  . Claude Code: .claude/ (7 agents, prompts, run.sh, settings.json)"
+echo "  . Claude Code: .claude/ (8 agents, prompts, run.sh, settings.json)"
 echo "  . graphify (knowledge graph builder)"
 if [ -d "$GRAPHIFY_VENV_DIR" ]; then
     echo "  . Python virtual env: $GRAPHIFY_VENV_DIR"
